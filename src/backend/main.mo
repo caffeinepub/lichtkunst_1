@@ -6,31 +6,20 @@ import Map "mo:core/Map";
 import Runtime "mo:core/Runtime";
 import Order "mo:core/Order";
 import Principal "mo:core/Principal";
-
 import AccessControl "authorization/access-control";
 import MixinAuthorization "authorization/MixinAuthorization";
 import MixinStorage "blob-storage/Mixin";
 import Storage "blob-storage/Storage";
 
-
 actor {
-  // Admin principal
-  let adminPrincipal = Principal.fromText("uorkh-nazas-r5n3p-kj44w-gwm4i-liaj3-jqjll-ws44w-7dlve-3mshw-sae");
+  // Admin principal - hardcoded as per requirements
+  let adminPrincipal = Principal.fromText("kcznz-vfjcj-xmtzc-aw23m-th6f7-43fd3-ytu3i-ot3ig-nuwnj-oba6h-fqe");
+
   let accessControlState = AccessControl.initState();
   include MixinAuthorization(accessControlState);
 
   // Blob Storage
   include MixinStorage();
-
-  // Helper: check if caller is admin (hardcoded principal OR role-based)
-  private func checkIsAdmin(caller : Principal) : Bool {
-    caller == adminPrincipal or AccessControl.isAdmin(accessControlState, caller);
-  };
-
-  // Explicit isAdmin check function
-  public query ({ caller }) func isAdmin() : async Bool {
-    checkIsAdmin(caller);
-  };
 
   // User Profile Type
   public type UserProfile = {
@@ -89,7 +78,7 @@ actor {
   };
 
   public query ({ caller }) func getUserProfile(user : Principal) : async ?UserProfile {
-    if (caller != user and not checkIsAdmin(caller)) {
+    if (caller != user and not AccessControl.isAdmin(accessControlState, caller)) {
       Runtime.trap("Unauthorized: Can only view your own profile");
     };
     userProfiles.get(user);
@@ -104,7 +93,7 @@ actor {
 
   // Collection Management (Admin-only)
   public shared ({ caller }) func createCollection(id : Text, name : Text, description : Text, coverImageId : ?Storage.ExternalBlob) : async () {
-    if (not checkIsAdmin(caller)) {
+    if (not AccessControl.isAdmin(accessControlState, caller)) {
       Runtime.trap("Unauthorized: Only admins can perform this action");
     };
 
@@ -119,7 +108,7 @@ actor {
   };
 
   public shared ({ caller }) func updateCollection(id : Text, name : Text, description : Text, coverImageId : ?Storage.ExternalBlob) : async () {
-    if (not checkIsAdmin(caller)) {
+    if (not AccessControl.isAdmin(accessControlState, caller)) {
       Runtime.trap("Unauthorized: Only admins can perform this action");
     };
 
@@ -139,7 +128,7 @@ actor {
   };
 
   public shared ({ caller }) func deleteCollection(id : Text) : async () {
-    if (not checkIsAdmin(caller)) {
+    if (not AccessControl.isAdmin(accessControlState, caller)) {
       Runtime.trap("Unauthorized: Only admins can perform this action");
     };
 
@@ -149,14 +138,14 @@ actor {
 
     collections.remove(id);
 
-    // Remove NFTs belonging to this collection
+    // Optionally, remove NFTs belonging to this collection
     let toRemove = nfts.values().filter(func(nft) { nft.collectionId == id }).toArray();
     toRemove.values().forEach(func(nft) { nfts.remove(nft.id) });
   };
 
   // NFT Management (Admin-only)
   public shared ({ caller }) func mintNFT(id : Text, title : Text, description : Text, imageId : Storage.ExternalBlob, collectionId : Text, edition : Text) : async () {
-    if (not checkIsAdmin(caller)) {
+    if (not AccessControl.isAdmin(accessControlState, caller)) {
       Runtime.trap("Unauthorized: Only admins can perform this action");
     };
 
@@ -177,7 +166,7 @@ actor {
   };
 
   public shared ({ caller }) func updateNFT(id : Text, title : Text, description : Text, imageId : Storage.ExternalBlob, edition : Text) : async () {
-    if (not checkIsAdmin(caller)) {
+    if (not AccessControl.isAdmin(accessControlState, caller)) {
       Runtime.trap("Unauthorized: Only admins can perform this action");
     };
 
@@ -199,7 +188,7 @@ actor {
   };
 
   public shared ({ caller }) func burnNFT(id : Text) : async () {
-    if (not checkIsAdmin(caller)) {
+    if (not AccessControl.isAdmin(accessControlState, caller)) {
       Runtime.trap("Unauthorized: Only admins can perform this action");
     };
 
@@ -235,5 +224,9 @@ actor {
       case (null) { Runtime.trap("NFT not found") };
       case (?nft) { nft };
     };
+  };
+
+  public query ({ caller }) func isAdmin() : async Bool {
+    AccessControl.isAdmin(accessControlState, caller);
   };
 };

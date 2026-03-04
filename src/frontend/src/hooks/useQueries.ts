@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useRef } from "react";
 import type { Collection, ExternalBlob, NFT } from "../backend";
 import { useActor } from "./useActor";
 import { useInternetIdentity } from "./useInternetIdentity";
@@ -69,34 +70,52 @@ export function useNFTsByCollection(collectionId: string) {
 
 // ─── Admin check ───────────────────────────────────────────────
 
-const ADMIN_PRINCIPAL =
-  "uorkh-nazas-r5n3p-kj44w-gwm4i-liaj3-jqjll-ws44w-7dlve-3mshw-sae";
+// Accept both the live principal and the draft principal so admin works on both environments
+const ADMIN_PRINCIPALS = new Set([
+  "uorkh-nazas-r5n3p-kj44w-gwm4i-liaj3-jqjll-ws44w-7dlve-3mshw-sae", // live
+  "kcznz-vfjcj-xmtzc-aw23m-th6f7-43fd3-ytu3i-ot3ig-nuwnj-oba6h-fqe", // draft
+]);
 
 export function useIsAdmin() {
   const { identity, loginStatus } = useInternetIdentity();
 
+  // Persist the last known admin decision so that transient status
+  // bounces never flip a confirmed admin back to "denied".
+  const lastKnownAdmin = useRef<boolean | null>(null);
+  // Track whether we've ever completed initialization at least once.
+  const hasInitialized = useRef<boolean>(false);
+
+  if (loginStatus !== "initializing" && loginStatus !== "logging-in") {
+    hasInitialized.current = true;
+  }
+
   const principalStr = identity?.getPrincipal().toString() ?? null;
+  const isRealIdentity = !!principalStr && principalStr !== "2vxsx-fae";
 
-  // If we already have a non-anonymous identity, we can decide immediately.
-  // This avoids the "initializing" bounce that occurs when authClient state
-  // changes cause the effect in useInternetIdentity to re-run.
-  const hasIdentity = !!principalStr && principalStr !== "2vxsx-fae";
-
-  if (hasIdentity) {
+  if (isRealIdentity) {
+    // Compute and cache the decision while we have a real identity.
+    lastKnownAdmin.current = ADMIN_PRINCIPALS.has(principalStr);
     return {
-      data: principalStr === ADMIN_PRINCIPAL,
+      data: lastKnownAdmin.current,
       isLoading: false,
     };
   }
 
-  // No identity yet — wait until loginStatus has settled before deciding.
-  // "initializing" = loading from storage; "logging-in" = popup open.
-  const isSettled =
-    loginStatus !== "initializing" && loginStatus !== "logging-in";
+  // No real identity right now.
+  // If we previously confirmed admin access, keep it — don't revoke on transient bounces.
+  if (lastKnownAdmin.current === true) {
+    return { data: true, isLoading: false };
+  }
+
+  // Still loading if auth system hasn't settled yet.
+  const isStillLoading =
+    loginStatus === "initializing" ||
+    loginStatus === "logging-in" ||
+    !hasInitialized.current;
 
   return {
     data: false,
-    isLoading: !isSettled,
+    isLoading: isStillLoading,
   };
 }
 

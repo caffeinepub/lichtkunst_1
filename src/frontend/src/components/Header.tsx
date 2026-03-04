@@ -8,13 +8,17 @@ import { useAuth } from "../lib/auth-utils";
 export function Header() {
   const { isAuthenticated, login, logout, isLoggingIn, isInitializing } =
     useAuth();
-  const { data: isAdmin } = useIsAdmin();
+  const { data: isAdmin, isLoading: isAdminLoading } = useIsAdmin();
   const location = useLocation();
+
+  // Show admin link as soon as we know the user is admin OR while still loading
+  // (to avoid the link flickering away on status bounces).
+  const showAdminLink = isAdmin || (isAuthenticated && isAdminLoading);
 
   const navLinks = [
     { to: "/", label: "Gallery" },
     { to: "/collections", label: "Collections" },
-    ...(isAdmin ? [{ to: "/admin", label: "Admin" }] : []),
+    ...(showAdminLink ? [{ to: "/admin", label: "Admin" }] : []),
   ] as const;
 
   const isActive = (path: string) => {
