@@ -11,11 +11,16 @@ interface AdminGuardProps {
 
 export function AdminGuard({ children }: AdminGuardProps) {
   const { isAuthenticated, login, isLoggingIn } = useAuth();
-  const { isInitializing: iiInitializing } = useInternetIdentity();
+  const { loginStatus } = useInternetIdentity();
   const { data: isAdmin, isLoading } = useIsAdmin();
 
-  // Wait for identity initialization before making any auth decisions
-  if (isLoading || iiInitializing) {
+  // Show spinner while identity system is initializing or logging in,
+  // OR while we still have a pending admin decision.
+  // This prevents premature "Access Denied" during any async re-initialization.
+  const isStillLoading =
+    isLoading || loginStatus === "initializing" || loginStatus === "logging-in";
+
+  if (isStillLoading) {
     return (
       <div
         className="container mx-auto px-4 py-24 flex justify-center"

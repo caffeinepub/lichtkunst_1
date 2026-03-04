@@ -73,12 +73,30 @@ const ADMIN_PRINCIPAL =
   "uorkh-nazas-r5n3p-kj44w-gwm4i-liaj3-jqjll-ws44w-7dlve-3mshw-sae";
 
 export function useIsAdmin() {
-  const { identity, isInitializing } = useInternetIdentity();
+  const { identity, loginStatus } = useInternetIdentity();
+
   const principalStr = identity?.getPrincipal().toString() ?? null;
-  const isAdmin = principalStr === ADMIN_PRINCIPAL;
+
+  // If we already have a non-anonymous identity, we can decide immediately.
+  // This avoids the "initializing" bounce that occurs when authClient state
+  // changes cause the effect in useInternetIdentity to re-run.
+  const hasIdentity = !!principalStr && principalStr !== "2vxsx-fae";
+
+  if (hasIdentity) {
+    return {
+      data: principalStr === ADMIN_PRINCIPAL,
+      isLoading: false,
+    };
+  }
+
+  // No identity yet — wait until loginStatus has settled before deciding.
+  // "initializing" = loading from storage; "logging-in" = popup open.
+  const isSettled =
+    loginStatus !== "initializing" && loginStatus !== "logging-in";
+
   return {
-    data: isAdmin,
-    isLoading: isInitializing,
+    data: false,
+    isLoading: !isSettled,
   };
 }
 
