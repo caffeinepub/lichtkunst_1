@@ -12,8 +12,22 @@ import MixinStorage "blob-storage/Mixin";
 import Storage "blob-storage/Storage";
 
 actor {
-  // Admin principal - hardcoded as per requirements
-  let adminPrincipal = Principal.fromText("kcznz-vfjcj-xmtzc-aw23m-th6f7-43fd3-ytu3i-ot3ig-nuwnj-oba6h-fqe");
+  // Stable variable kept for upgrade compatibility with previous version
+  stable var adminPrincipal : Principal = Principal.fromText("kcznz-vfjcj-xmtzc-aw23m-th6f7-43fd3-ytu3i-ot3ig-nuwnj-oba6h-fqe");
+
+  // All known admin principals across environments
+  let adminPrincipals : [Principal] = [
+    Principal.fromText("kcznz-vfjcj-xmtzc-aw23m-th6f7-43fd3-ytu3i-ot3ig-nuwnj-oba6h-fqe"),
+    Principal.fromText("d5t6k-adjdl-ak3tk-xi2mp-lpwl2-wx2mt-35n2k-xy7nd-l5kbv-cyb6v-mqe"),
+    Principal.fromText("uorkh-nazas-r5n3p-kj44w-gwm4i-liaj3-jqjll-ws44w-7dlve-3mshw-sae"),
+  ];
+
+  func isAdminPrincipal(p : Principal) : Bool {
+    for (ap in adminPrincipals.vals()) {
+      if (ap == p) return true;
+    };
+    false
+  };
 
   let accessControlState = AccessControl.initState();
   include MixinAuthorization(accessControlState);
@@ -78,7 +92,7 @@ actor {
   };
 
   public query ({ caller }) func getUserProfile(user : Principal) : async ?UserProfile {
-    if (caller != user and not AccessControl.isAdmin(accessControlState, caller)) {
+    if (caller != user and not isAdminPrincipal(caller)) {
       Runtime.trap("Unauthorized: Can only view your own profile");
     };
     userProfiles.get(user);
@@ -93,7 +107,7 @@ actor {
 
   // Collection Management (Admin-only)
   public shared ({ caller }) func createCollection(id : Text, name : Text, description : Text, coverImageId : ?Storage.ExternalBlob) : async () {
-    if (not AccessControl.isAdmin(accessControlState, caller)) {
+    if (not isAdminPrincipal(caller)) {
       Runtime.trap("Unauthorized: Only admins can perform this action");
     };
 
@@ -108,7 +122,7 @@ actor {
   };
 
   public shared ({ caller }) func updateCollection(id : Text, name : Text, description : Text, coverImageId : ?Storage.ExternalBlob) : async () {
-    if (not AccessControl.isAdmin(accessControlState, caller)) {
+    if (not isAdminPrincipal(caller)) {
       Runtime.trap("Unauthorized: Only admins can perform this action");
     };
 
@@ -128,7 +142,7 @@ actor {
   };
 
   public shared ({ caller }) func deleteCollection(id : Text) : async () {
-    if (not AccessControl.isAdmin(accessControlState, caller)) {
+    if (not isAdminPrincipal(caller)) {
       Runtime.trap("Unauthorized: Only admins can perform this action");
     };
 
@@ -145,7 +159,7 @@ actor {
 
   // NFT Management (Admin-only)
   public shared ({ caller }) func mintNFT(id : Text, title : Text, description : Text, imageId : Storage.ExternalBlob, collectionId : Text, edition : Text) : async () {
-    if (not AccessControl.isAdmin(accessControlState, caller)) {
+    if (not isAdminPrincipal(caller)) {
       Runtime.trap("Unauthorized: Only admins can perform this action");
     };
 
@@ -166,7 +180,7 @@ actor {
   };
 
   public shared ({ caller }) func updateNFT(id : Text, title : Text, description : Text, imageId : Storage.ExternalBlob, edition : Text) : async () {
-    if (not AccessControl.isAdmin(accessControlState, caller)) {
+    if (not isAdminPrincipal(caller)) {
       Runtime.trap("Unauthorized: Only admins can perform this action");
     };
 
@@ -188,7 +202,7 @@ actor {
   };
 
   public shared ({ caller }) func burnNFT(id : Text) : async () {
-    if (not AccessControl.isAdmin(accessControlState, caller)) {
+    if (not isAdminPrincipal(caller)) {
       Runtime.trap("Unauthorized: Only admins can perform this action");
     };
 
@@ -227,6 +241,6 @@ actor {
   };
 
   public query ({ caller }) func isAdmin() : async Bool {
-    AccessControl.isAdmin(accessControlState, caller);
+    isAdminPrincipal(caller);
   };
 };

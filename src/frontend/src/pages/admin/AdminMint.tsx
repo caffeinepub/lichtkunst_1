@@ -23,7 +23,9 @@ import {
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
+import { Link } from "@tanstack/react-router";
 import {
+  AlertTriangle,
   ChevronDown,
   ChevronUp,
   ImageIcon,
@@ -266,6 +268,7 @@ export function AdminMint() {
                   onValueChange={(v) =>
                     setForm((p) => ({ ...p, collectionId: v }))
                   }
+                  disabled={!collections || collections.length === 0}
                 >
                   <SelectTrigger
                     className="border-border/70"
@@ -274,19 +277,29 @@ export function AdminMint() {
                     <SelectValue placeholder="Select a collection" />
                   </SelectTrigger>
                   <SelectContent className="bg-popover border-border">
-                    {!collections || collections.length === 0 ? (
-                      <SelectItem value="none" disabled>
-                        No collections — create one first
+                    {collections?.map((c) => (
+                      <SelectItem key={c.id} value={c.id}>
+                        {c.name}
                       </SelectItem>
-                    ) : (
-                      collections.map((c) => (
-                        <SelectItem key={c.id} value={c.id}>
-                          {c.name}
-                        </SelectItem>
-                      ))
-                    )}
+                    ))}
                   </SelectContent>
                 </Select>
+                {(!collections || collections.length === 0) && (
+                  <p
+                    className="flex items-center gap-1.5 text-xs text-amber-400 mt-1"
+                    data-ocid="admin.nft.error_state"
+                  >
+                    <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
+                    Keine Kollektion vorhanden —{" "}
+                    <Link
+                      to="/admin/collections"
+                      className="underline underline-offset-2 hover:text-amber-300 transition-colors"
+                      data-ocid="admin.collections.link"
+                    >
+                      Bitte zuerst eine Kollektion erstellen
+                    </Link>
+                  </p>
+                )}
               </div>
 
               {mintMutation.isPending && form.uploadProgress > 0 && (
@@ -300,8 +313,8 @@ export function AdminMint() {
 
               <Button
                 type="submit"
-                disabled={mintMutation.isPending}
-                className="bg-accent text-accent-foreground hover:bg-accent/90 shadow-glow-sm"
+                disabled={mintMutation.isPending || !form.collectionId}
+                className="bg-accent text-accent-foreground hover:bg-accent/90 shadow-glow-sm disabled:opacity-50 disabled:cursor-not-allowed"
                 data-ocid="admin.nft.submit_button"
               >
                 {mintMutation.isPending ? (

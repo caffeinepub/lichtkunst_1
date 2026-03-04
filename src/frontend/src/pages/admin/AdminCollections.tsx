@@ -132,8 +132,47 @@ export function AdminCollections() {
       }
       setForm(emptyForm);
     } catch (err) {
-      toast.error("Failed to save collection");
-      console.error(err);
+      console.error("Collection save error:", err);
+
+      // Extract a meaningful error message
+      let detail = "Unknown error";
+      if (err instanceof Error) {
+        detail = err.message;
+      } else if (typeof err === "string") {
+        detail = err;
+      } else if (err && typeof err === "object") {
+        // ICP rejects come as objects with a message or reject_message field
+        const e = err as Record<string, unknown>;
+        if (typeof e.message === "string") detail = e.message;
+        else if (typeof e.reject_message === "string")
+          detail = e.reject_message;
+        else if (typeof e.error_message === "string") detail = e.error_message;
+        else detail = JSON.stringify(err);
+      }
+
+      // Check for common causes
+      let hint = "";
+      if (
+        detail.toLowerCase().includes("unauthorized") ||
+        detail.toLowerCase().includes("only admin")
+      ) {
+        hint = " — Nicht als Admin authentifiziert. Bitte neu einloggen.";
+      } else if (
+        detail.toLowerCase().includes("not authenticated") ||
+        detail.toLowerCase().includes("no actor")
+      ) {
+        hint = " — Keine aktive Session. Bitte einloggen und erneut versuchen.";
+      } else if (
+        detail.toLowerCase().includes("network") ||
+        detail.toLowerCase().includes("fetch")
+      ) {
+        hint =
+          " — Netzwerkfehler. Bitte Verbindung prüfen und erneut versuchen.";
+      }
+
+      toast.error(`Fehler beim Speichern: ${detail}${hint}`, {
+        duration: 8000,
+      });
     }
   }
 
@@ -152,8 +191,19 @@ export function AdminCollections() {
     try {
       await deleteMutation.mutateAsync(id);
       toast.success("Collection deleted");
-    } catch {
-      toast.error("Failed to delete collection");
+    } catch (err) {
+      console.error("Collection delete error:", err);
+      let detail = "Unknown error";
+      if (err instanceof Error) {
+        detail = err.message;
+      } else if (err && typeof err === "object") {
+        const e = err as Record<string, unknown>;
+        if (typeof e.message === "string") detail = e.message;
+        else if (typeof e.reject_message === "string")
+          detail = e.reject_message;
+        else detail = JSON.stringify(err);
+      }
+      toast.error(`Fehler beim Löschen: ${detail}`, { duration: 8000 });
     }
   }
 
