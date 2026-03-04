@@ -2,18 +2,26 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { Link, useLocation } from "@tanstack/react-router";
 import { Loader2, LogIn, LogOut, ShieldCheck } from "lucide-react";
-import { useIsAdmin } from "../hooks/useQueries";
+import { useInternetIdentity } from "../hooks/useInternetIdentity";
 import { useAuth } from "../lib/auth-utils";
+
+// Accept both the live principal and the draft principal
+const ADMIN_PRINCIPALS = new Set([
+  "uorkh-nazas-r5n3p-kj44w-gwm4i-liaj3-jqjll-ws44w-7dlve-3mshw-sae",
+  "kcznz-vfjcj-xmtzc-aw23m-th6f7-43fd3-ytu3i-ot3ig-nuwnj-oba6h-fqe",
+  "d5t6k-adjdl-ak3tk-xi2mp-lpwl2-wx2mt-35n2k-xy7nd-l5kbv-cyb6v-mqe",
+]);
 
 export function Header() {
   const { isAuthenticated, login, logout, isLoggingIn, isInitializing } =
     useAuth();
-  const { data: isAdmin, isLoading: isAdminLoading } = useIsAdmin();
+  const { identity } = useInternetIdentity();
   const location = useLocation();
 
-  // Show admin link as soon as we know the user is admin OR while still loading
-  // (to avoid the link flickering away on status bounces).
-  const showAdminLink = isAdmin || (isAuthenticated && isAdminLoading);
+  // Compute admin status directly from identity — no async, no race conditions
+  const principalStr = identity?.getPrincipal().toString() ?? null;
+  const isRealIdentity = !!principalStr && principalStr !== "2vxsx-fae";
+  const showAdminLink = isRealIdentity && ADMIN_PRINCIPALS.has(principalStr);
 
   const navLinks = [
     { to: "/", label: "Gallery" },
