@@ -105,10 +105,10 @@ export function GalleryPage() {
         <div className="absolute inset-0 bg-gradient-to-t from-background via-background/40 to-transparent" />
         <div className="absolute bottom-0 left-0 p-4 sm:p-6">
           <motion.h1
-            className="text-2xl sm:text-4xl lg:text-5xl text-foreground text-glow-amber mb-1 uppercase"
+            className="text-base sm:text-2xl lg:text-3xl text-foreground text-glow-amber mb-1 uppercase"
             style={{
               fontFamily: "'Fraunces', serif",
-              fontWeight: 45,
+              fontWeight: 25,
               letterSpacing: "0.25em",
             }}
             initial={{ opacity: 0, y: 20 }}
