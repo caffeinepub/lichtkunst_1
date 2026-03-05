@@ -108,7 +108,7 @@ export function GalleryPage() {
             className="text-2xl sm:text-4xl lg:text-5xl text-foreground text-glow-amber mb-1 uppercase"
             style={{
               fontFamily: "'Fraunces', serif",
-              fontWeight: 100,
+              fontWeight: 45,
               letterSpacing: "0.25em",
             }}
             initial={{ opacity: 0, y: 20 }}
@@ -128,8 +128,7 @@ export function GalleryPage() {
             animate={{ opacity: 1 }}
             transition={{ delay: 0.5, duration: 0.6 }}
           >
-            light artworks · light paintings by Istvan Seidel — minted on the
-            Internet Computer
+            light artworks by Istvan Seidel — minted on the Internet Computer
           </motion.p>
         </div>
       </motion.div>
