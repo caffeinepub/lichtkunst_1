@@ -1,19 +1,27 @@
 import Array "mo:core/Array";
-import Text "mo:core/Text";
 import Iter "mo:core/Iter";
-import Time "mo:core/Time";
 import Map "mo:core/Map";
-import Runtime "mo:core/Runtime";
+
 import Order "mo:core/Order";
 import Principal "mo:core/Principal";
+import Runtime "mo:core/Runtime";
+import Text "mo:core/Text";
+import Time "mo:core/Time";
 import AccessControl "authorization/access-control";
 import MixinAuthorization "authorization/MixinAuthorization";
 import MixinStorage "blob-storage/Mixin";
 import Storage "blob-storage/Storage";
 
+
 actor {
-  // Stable variable kept for upgrade compatibility with previous version
   stable var adminPrincipal : Principal = Principal.fromText("kcznz-vfjcj-xmtzc-aw23m-th6f7-43fd3-ytu3i-ot3ig-nuwnj-oba6h-fqe");
+
+  // Blob Storage
+  include MixinStorage();
+
+  // We can't call this in an actor field in the migration module
+  let accessControlState = AccessControl.initState();
+  include MixinAuthorization(accessControlState);
 
   // All known admin principals across environments
   let adminPrincipals : [Principal] = [
@@ -26,29 +34,30 @@ actor {
     for (ap in adminPrincipals.vals()) {
       if (ap == p) return true;
     };
-    false
+    false;
   };
 
-  let accessControlState = AccessControl.initState();
-  include MixinAuthorization(accessControlState);
-
-  // Blob Storage
-  include MixinStorage();
-
-  // User Profile Type
-  public type UserProfile = {
+  type UserProfile = {
     name : Text;
   };
 
   let userProfiles = Map.empty<Principal, UserProfile>();
 
-  // Data Types
   type Collection = {
     id : Text;
     name : Text;
     description : Text;
     coverImageId : ?Storage.ExternalBlob;
     createdAt : Int;
+  };
+
+  module Collection {
+    public func compare(collection1 : Collection, collection2 : Collection) : Order.Order {
+      switch (Text.compare(collection1.id, collection2.id)) {
+        case (#equal) { Text.compare(collection1.id, collection2.id) };
+        case (order) { order };
+      };
+    };
   };
 
   type NFT = {
@@ -61,15 +70,6 @@ actor {
     mintedAt : Int;
   };
 
-  module Collection {
-    public func compare(collection1 : Collection, collection2 : Collection) : Order.Order {
-      switch (Text.compare(collection1.id, collection2.id)) {
-        case (#equal) { Text.compare(collection1.id, collection2.id) };
-        case (order) { order };
-      };
-    };
-  };
-
   module NFT {
     public func compare(nft1 : NFT, nft2 : NFT) : Order.Order {
       switch (Text.compare(nft1.id, nft2.id)) {
@@ -79,11 +79,9 @@ actor {
     };
   };
 
-  // Storage Structures
-  let collections = Map.empty<Text, Collection>();
-  let nfts = Map.empty<Text, NFT>();
+  stable var collections : Map.Map<Text, Collection> = Map.empty<Text, Collection>();
+  stable var nfts : Map.Map<Text, NFT> = Map.empty<Text, NFT>();
 
-  // User Profile Management
   public query ({ caller }) func getCallerUserProfile() : async ?UserProfile {
     if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
       Runtime.trap("Unauthorized: Only users can access profiles");
@@ -152,7 +150,7 @@ actor {
 
     collections.remove(id);
 
-    // Optionally, remove NFTs belonging to this collection
+    // OptioNally, remove NFTs belonging to this collection
     let toRemove = nfts.values().filter(func(nft) { nft.collectionId == id }).toArray();
     toRemove.values().forEach(func(nft) { nfts.remove(nft.id) });
   };
@@ -213,7 +211,6 @@ actor {
     nfts.remove(id);
   };
 
-  // Public Queries
   public query ({ caller }) func getAllCollections() : async [Collection] {
     collections.values().toArray().sort();
   };
