@@ -1,9 +1,27 @@
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Link, useParams } from "@tanstack/react-router";
-import { ArrowLeft, Calendar, Hash, Layers } from "lucide-react";
+import {
+  ArrowLeft,
+  Calendar,
+  Hash,
+  Layers,
+  Loader2,
+  Send,
+  User,
+} from "lucide-react";
 import { motion } from "motion/react";
-import { useCollection, useNFT } from "../hooks/useQueries";
+import { useState } from "react";
+import { toast } from "sonner";
+import {
+  useCollection,
+  useIsAdmin,
+  useNFT,
+  useNFTOwner,
+  useTransferNFT,
+} from "../hooks/useQueries";
 
 function formatDate(nanoseconds: bigint): string {
   const ms = Number(nanoseconds / BigInt(1_000_000));
@@ -14,10 +32,31 @@ function formatDate(nanoseconds: bigint): string {
   }).format(new Date(ms));
 }
 
+function truncatePrincipal(principal: string): string {
+  if (principal.length <= 20) return principal;
+  return `${principal.slice(0, 10)}...${principal.slice(-8)}`;
+}
+
 export function NFTDetailPage() {
   const { id } = useParams({ from: "/nft/$id" });
   const { data: nft, isLoading } = useNFT(id);
   const { data: collection } = useCollection(nft?.collectionId ?? "");
+  const { data: isAdmin } = useIsAdmin();
+  const { data: owner } = useNFTOwner(id);
+  const transferMutation = useTransferNFT();
+  const [recipientInput, setRecipientInput] = useState("");
+
+  const handleTransfer = async () => {
+    const toOwner = recipientInput.trim();
+    if (!toOwner) return;
+    try {
+      await transferMutation.mutateAsync({ nftId: id, toOwner });
+      toast.success("NFT erfolgreich übertragen!");
+      setRecipientInput("");
+    } catch {
+      toast.error("Fehler beim Übertragen");
+    }
+  };
 
   if (isLoading) {
     return (
@@ -146,6 +185,68 @@ export function NFTDetailPage() {
               </div>
             </div>
           </div>
+
+          {/* Admin: NFT Transfer Section */}
+          {isAdmin && (
+            <div className="pt-4 border-t border-border/40 space-y-4">
+              <div className="flex items-center gap-2">
+                <Send className="w-4 h-4 text-accent shrink-0" />
+                <h3 className="text-sm font-medium text-foreground tracking-wide uppercase">
+                  NFT übertragen
+                </h3>
+              </div>
+
+              {/* Current Owner */}
+              <div className="flex items-start gap-3">
+                <User className="w-4 h-4 text-muted-foreground shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">
+                    Aktueller Besitzer
+                  </p>
+                  {owner ? (
+                    <p
+                      className="text-xs font-mono text-foreground/80 break-all"
+                      title={owner}
+                    >
+                      {truncatePrincipal(owner)}
+                    </p>
+                  ) : (
+                    <p className="text-xs text-muted-foreground italic">
+                      Galerie (kein Besitzer)
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              {/* Transfer Input + Button */}
+              <div className="flex gap-2">
+                <Input
+                  value={recipientInput}
+                  onChange={(e) => setRecipientInput(e.target.value)}
+                  placeholder="Empfänger Principal ID"
+                  className="text-sm font-mono flex-1"
+                  data-ocid="nft.transfer_input"
+                  disabled={transferMutation.isPending}
+                />
+                <Button
+                  onClick={handleTransfer}
+                  disabled={
+                    !recipientInput.trim() || transferMutation.isPending
+                  }
+                  size="sm"
+                  className="shrink-0"
+                  data-ocid="nft.transfer_button"
+                >
+                  {transferMutation.isPending ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Send className="w-4 h-4" />
+                  )}
+                  <span className="ml-1.5">Übertragen</span>
+                </Button>
+              </div>
+            </div>
+          )}
         </motion.div>
       </motion.div>
     </div>

@@ -12,6 +12,7 @@ import { Footer } from "./components/Footer";
 import { Header } from "./components/Header";
 import { CollectionDetailPage } from "./pages/CollectionDetailPage";
 import { CollectionsPage } from "./pages/CollectionsPage";
+import { ContactPage } from "./pages/ContactPage";
 import { GalleryPage } from "./pages/GalleryPage";
 import { NFTDetailPage } from "./pages/NFTDetailPage";
 import { AdminCollections } from "./pages/admin/AdminCollections";
@@ -66,6 +67,12 @@ const nftDetailRoute = createRoute({
   component: NFTDetailPage,
 });
 
+const contactRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/contact",
+  component: ContactPage,
+});
+
 // ─── Admin routes ──────────────────────────────────────────────
 const adminRoute = createRoute({
   getParentRoute: () => rootRoute,
@@ -111,6 +118,7 @@ const routeTree = rootRoute.addChildren([
   collectionsRoute,
   collectionDetailRoute,
   nftDetailRoute,
+  contactRoute,
   adminRoute.addChildren([
     adminIndexRoute,
     adminCollectionsRoute,

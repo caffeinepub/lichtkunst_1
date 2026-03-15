@@ -81,6 +81,8 @@ actor {
 
   stable var collections : Map.Map<Text, Collection> = Map.empty<Text, Collection>();
   stable var nfts : Map.Map<Text, NFT> = Map.empty<Text, NFT>();
+  // NFT ownership: maps NFT id -> owner principal text; absent = held by gallery/admin
+  stable var nftOwners : Map.Map<Text, Text> = Map.empty<Text, Text>();
 
   public query ({ caller }) func getCallerUserProfile() : async ?UserProfile {
     if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
@@ -209,6 +211,24 @@ actor {
     };
 
     nfts.remove(id);
+  };
+
+  // NFT Transfer (Admin-only): transfer ownership to a principal text
+  public shared ({ caller }) func transferNFT(nftId : Text, toOwner : Text) : async () {
+    if (not isAdminPrincipal(caller)) {
+      Runtime.trap("Unauthorized: Only admins can transfer NFTs");
+    };
+    if (not nfts.containsKey(nftId)) {
+      Runtime.trap("NFT not found");
+    };
+    // Validate principal text is parseable
+    let _ = Principal.fromText(toOwner);
+    nftOwners.add(nftId, toOwner);
+  };
+
+  // Get current owner of an NFT (null = held by gallery)
+  public query func getNFTOwner(nftId : Text) : async ?Text {
+    nftOwners.get(nftId);
   };
 
   public query ({ caller }) func getAllCollections() : async [Collection] {

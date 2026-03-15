@@ -260,3 +260,41 @@ export function useBurnNFT() {
     },
   });
 }
+
+// ─── NFT Owner / Transfer ──────────────────────────────────────
+
+export function useNFTOwner(nftId: string) {
+  const { actor, isFetching } = useActor();
+  return useQuery<string | null>({
+    queryKey: ["nftOwner", nftId],
+    queryFn: async () => {
+      if (!actor) return null;
+      // Cast to any since getNFTOwner is a new backend function not yet in generated types
+      const result = (await (actor as any).getNFTOwner(nftId)) as string[];
+      // Motoko optional returns [] or [value]
+      return result.length > 0 ? result[0] : null;
+    },
+    enabled: !!actor && !isFetching && !!nftId,
+  });
+}
+
+export function useTransferNFT() {
+  const { actor } = useActor();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      nftId,
+      toOwner,
+    }: { nftId: string; toOwner: string }) => {
+      if (!actor) throw new Error("Not authenticated");
+      // Cast to any since transferNFT is a new backend function not yet in generated types
+      return (actor as any).transferNFT(nftId, toOwner);
+    },
+    onSuccess: (
+      _data: unknown,
+      { nftId }: { nftId: string; toOwner: string },
+    ) => {
+      void qc.invalidateQueries({ queryKey: ["nftOwner", nftId] });
+    },
+  });
+}

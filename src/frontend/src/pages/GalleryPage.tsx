@@ -90,7 +90,7 @@ export function GalleryPage() {
 
   return (
     <div className="container mx-auto px-4 sm:px-6 py-12">
-      {/* Hero */}
+      {/* Hero Banner */}
       <motion.div
         className="mb-6 overflow-hidden rounded relative"
         initial={{ opacity: 0, scale: 0.98 }}
@@ -100,7 +100,7 @@ export function GalleryPage() {
         <img
           src="/assets/generated/hero-lichtkunst.dim_1400x600.jpg"
           alt="Light Art by Istvan Seidel"
-          className="w-full h-24 sm:h-36 lg:h-48 object-cover"
+          className="w-full h-48 sm:h-72 lg:h-96 object-cover"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-background via-background/40 to-transparent" />
         <div className="absolute bottom-0 left-0 p-4 sm:p-6">

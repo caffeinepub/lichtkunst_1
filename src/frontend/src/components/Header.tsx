@@ -26,6 +26,7 @@ export function Header() {
   const navLinks = [
     { to: "/", label: "Gallery" },
     { to: "/collections", label: "Collections" },
+    { to: "/contact", label: "Kontakt" },
     ...(showAdminLink ? [{ to: "/admin", label: "Admin" }] : []),
   ] as const;
 
@@ -74,7 +75,9 @@ export function Header() {
                     ? "nav.gallery_link"
                     : link.to === "/collections"
                       ? "nav.collections_link"
-                      : "nav.admin_link"
+                      : link.to === "/contact"
+                        ? "nav.contact_link"
+                        : "nav.admin_link"
                 }
               >
                 {link.to === "/admin" && (
@@ -138,7 +141,9 @@ export function Header() {
                   ? "nav.gallery_link"
                   : link.to === "/collections"
                     ? "nav.collections_link"
-                    : "nav.admin_link"
+                    : link.to === "/contact"
+                      ? "nav.contact_link"
+                      : "nav.admin_link"
               }
             >
               {link.label}
