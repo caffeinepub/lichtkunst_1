@@ -1,23 +1,23 @@
 # lichtkunst
 
 ## Current State
-NFT gallery app for Istvan Seidel with collections, NFT minting, admin area, and SEO optimization. Routing via TanStack Router with Header/Footer layout.
+Stable NFT gallery app with collections, NFT minting, admin area, SEO, contact form on homepage and contact page. Backend uses stable vars for persistence.
 
 ## Requested Changes (Diff)
 
 ### Add
-- New `/contact` page with a friendly contact form
-- Navigation link to contact page in Header
-- Form opens a pre-filled mailto: link to lichtkunst@proton.me with subject and message body
+- Email subscription: visitors can enter their email to subscribe to updates
+- Backend: stable var to store subscriber emails, public functions to subscribe and (admin-only) list/delete subscribers
+- Frontend: newsletter signup widget on homepage (below contact form) and in the admin dashboard to view/manage subscribers
 
 ### Modify
-- Header: add "Kontakt" navigation link
-- App.tsx: register the new contact route
+- GalleryPage: add newsletter signup section below contact form
+- AdminDashboard: add subscriber list tab/section
 
 ### Remove
 - Nothing
 
 ## Implementation Plan
-1. Create `ContactPage.tsx` with welcoming intro text and a form (name, email, message). On submit, construct a mailto: URL and open it.
-2. Register `/contact` route in App.tsx
-3. Add "Kontakt" link to Header navigation
+1. Add subscriber storage + subscribe/getSubscribers/deleteSubscriber functions to main.mo
+2. Add newsletter signup UI to GalleryPage
+3. Add subscriber management to AdminDashboard

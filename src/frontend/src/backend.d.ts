@@ -43,18 +43,23 @@ export interface backendInterface {
     burnNFT(id: string): Promise<void>;
     createCollection(id: string, name: string, description: string, coverImageId: ExternalBlob | null): Promise<void>;
     deleteCollection(id: string): Promise<void>;
+    deleteSubscriber(email: string): Promise<void>;
     getAllCollections(): Promise<Array<Collection>>;
     getAllNFTs(): Promise<Array<NFT>>;
     getCallerUserProfile(): Promise<UserProfile | null>;
     getCallerUserRole(): Promise<UserRole>;
     getCollectionById(id: string): Promise<Collection>;
     getNFTById(id: string): Promise<NFT>;
+    getNFTOwner(nftId: string): Promise<string | null>;
     getNFTsByCollection(collectionId: string): Promise<Array<NFT>>;
+    getSubscribers(): Promise<Array<string>>;
     getUserProfile(user: Principal): Promise<UserProfile | null>;
     isAdmin(): Promise<boolean>;
     isCallerAdmin(): Promise<boolean>;
     mintNFT(id: string, title: string, description: string, imageId: ExternalBlob, collectionId: string, edition: string): Promise<void>;
     saveCallerUserProfile(profile: UserProfile): Promise<void>;
+    subscribeEmail(email: string): Promise<string>;
+    transferNFT(nftId: string, toOwner: string): Promise<void>;
     updateCollection(id: string, name: string, description: string, coverImageId: ExternalBlob | null): Promise<void>;
     updateNFT(id: string, title: string, description: string, imageId: ExternalBlob, edition: string): Promise<void>;
 }

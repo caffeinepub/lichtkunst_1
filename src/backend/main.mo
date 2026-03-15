@@ -83,6 +83,8 @@ actor {
   stable var nfts : Map.Map<Text, NFT> = Map.empty<Text, NFT>();
   // NFT ownership: maps NFT id -> owner principal text; absent = held by gallery/admin
   stable var nftOwners : Map.Map<Text, Text> = Map.empty<Text, Text>();
+  // Newsletter subscribers: email -> subscribed timestamp
+  stable var subscribers : Map.Map<Text, Int> = Map.empty<Text, Int>();
 
   public query ({ caller }) func getCallerUserProfile() : async ?UserProfile {
     if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
@@ -259,5 +261,32 @@ actor {
 
   public query ({ caller }) func isAdmin() : async Bool {
     isAdminPrincipal(caller);
+  };
+
+  // Newsletter Subscriber Management
+  public shared func subscribeEmail(email : Text) : async Text {
+    let trimmed = email.trim(#char ' ');
+    if (trimmed.size() == 0) {
+      Runtime.trap("E-Mail darf nicht leer sein");
+    };
+    if (subscribers.containsKey(trimmed)) {
+      return "already_subscribed";
+    };
+    subscribers.add(trimmed, Time.now());
+    return "subscribed";
+  };
+
+  public query ({ caller }) func getSubscribers() : async [Text] {
+    if (not isAdminPrincipal(caller)) {
+      Runtime.trap("Unauthorized: Only admins can view subscribers");
+    };
+    subscribers.keys().toArray();
+  };
+
+  public shared ({ caller }) func deleteSubscriber(email : Text) : async () {
+    if (not isAdminPrincipal(caller)) {
+      Runtime.trap("Unauthorized: Only admins can delete subscribers");
+    };
+    subscribers.remove(email);
   };
 };

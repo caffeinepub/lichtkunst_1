@@ -1,10 +1,18 @@
-import { Sparkles } from "lucide-react";
+import { Loader2, Sparkles } from "lucide-react";
 import { motion } from "motion/react";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import type { Collection } from "../backend";
 import { NFTCard } from "../components/NFTCard";
 import { NFTGridSkeleton } from "../components/NFTSkeleton";
-import { useCollections, useNFTs } from "../hooks/useQueries";
+import { Button } from "../components/ui/button";
+import { Input } from "../components/ui/input";
+import { Label } from "../components/ui/label";
+import { Textarea } from "../components/ui/textarea";
+import {
+  useCollections,
+  useNFTs,
+  useSubscribeEmail,
+} from "../hooks/useQueries";
 
 const QUOTES = [
   // Walter Russell – Das Geheimnis des Lichtes
@@ -78,6 +86,17 @@ const itemVariants = {
 export function GalleryPage() {
   const { data: nfts, isLoading: nftsLoading } = useNFTs();
   const { data: collections } = useCollections();
+  const subscribeEmailMutation = useSubscribeEmail();
+
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [message, setMessage] = useState("");
+  const [submitted, setSubmitted] = useState(false);
+
+  const [newsletterEmail, setNewsletterEmail] = useState("");
+  const [newsletterStatus, setNewsletterStatus] = useState<
+    "idle" | "subscribed" | "already_subscribed"
+  >("idle");
 
   const collectionMap = new Map<string, Collection>(
     (collections ?? []).map((c) => [c.id, c]),
@@ -87,6 +106,31 @@ export function GalleryPage() {
     () => QUOTES[Math.floor(Math.random() * QUOTES.length)],
     [],
   );
+
+  function handleContactSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    const subject = encodeURIComponent("Anfrage – Lichtkunst / NFT");
+    const body = encodeURIComponent(
+      `Name: ${name}\nE-Mail: ${email}\n\n${message}`,
+    );
+    window.location.href = `mailto:lichtkunst@proton.me?subject=${subject}&body=${body}`;
+    setSubmitted(true);
+  }
+
+  async function handleNewsletterSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!newsletterEmail.trim()) return;
+    try {
+      const result = await subscribeEmailMutation.mutateAsync(
+        newsletterEmail.trim(),
+      );
+      setNewsletterStatus(
+        result === "already_subscribed" ? "already_subscribed" : "subscribed",
+      );
+    } catch {
+      // silently fail
+    }
+  }
 
   return (
     <div className="container mx-auto px-4 sm:px-6 py-12">
@@ -188,6 +232,222 @@ export function GalleryPage() {
           ))}
         </motion.div>
       )}
+
+      {/* Contact Section */}
+      <motion.section
+        className="mt-20"
+        initial={{ opacity: 0, y: 24 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, margin: "-60px" }}
+        transition={{ duration: 0.7, ease: "easeOut" }}
+      >
+        <div className="border-t border-border/30 pt-12">
+          <div className="max-w-lg mx-auto">
+            <h2
+              className="text-xl sm:text-2xl text-foreground uppercase mb-2 text-center"
+              style={{
+                fontFamily: "'Fraunces', serif",
+                fontWeight: 25,
+                letterSpacing: "0.3em",
+              }}
+            >
+              Kontakt
+            </h2>
+            <p className="text-muted-foreground text-sm text-center mb-8 leading-relaxed">
+              Sind Sie an meinen Kunstprojekten oder daran interessiert, ein NFT
+              zu erwerben? Ich freue mich auf Ihre Nachricht.
+            </p>
+
+            {submitted ? (
+              <motion.div
+                className="text-center py-8 text-accent"
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                data-ocid="homepage_contact.success_state"
+              >
+                <p className="text-base font-light tracking-wide">
+                  Vielen Dank! Ihr E-Mail-Programm sollte sich geöffnet haben.
+                </p>
+                <button
+                  type="button"
+                  className="mt-4 text-xs text-muted-foreground underline underline-offset-4 hover:text-foreground transition-colors"
+                  onClick={() => setSubmitted(false)}
+                >
+                  Weitere Nachricht senden
+                </button>
+              </motion.div>
+            ) : (
+              <form onSubmit={handleContactSubmit} className="space-y-5">
+                <div className="space-y-1.5">
+                  <Label
+                    htmlFor="contact-name"
+                    className="text-xs tracking-widest uppercase text-muted-foreground"
+                  >
+                    Name
+                  </Label>
+                  <Input
+                    id="contact-name"
+                    type="text"
+                    required
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    placeholder="Ihr Name"
+                    className="bg-card/50 border-border/40 focus:border-accent/60"
+                    data-ocid="homepage_contact.input"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label
+                    htmlFor="contact-email"
+                    className="text-xs tracking-widest uppercase text-muted-foreground"
+                  >
+                    E-Mail
+                  </Label>
+                  <Input
+                    id="contact-email"
+                    type="email"
+                    required
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="ihre@email.de"
+                    className="bg-card/50 border-border/40 focus:border-accent/60"
+                    data-ocid="homepage_contact.input"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label
+                    htmlFor="contact-message"
+                    className="text-xs tracking-widest uppercase text-muted-foreground"
+                  >
+                    Nachricht
+                  </Label>
+                  <Textarea
+                    id="contact-message"
+                    required
+                    value={message}
+                    onChange={(e) => setMessage(e.target.value)}
+                    placeholder="Ihre Nachricht…"
+                    rows={5}
+                    className="bg-card/50 border-border/40 focus:border-accent/60 resize-none"
+                    data-ocid="homepage_contact.textarea"
+                  />
+                </div>
+                <div className="flex flex-col items-center gap-3 pt-1">
+                  <Button
+                    type="submit"
+                    className="w-full sm:w-auto px-10"
+                    data-ocid="homepage_contact.submit_button"
+                  >
+                    Nachricht senden
+                  </Button>
+                  <p className="text-xs text-muted-foreground/50">
+                    Nachricht geht an lichtkunst@proton.me
+                  </p>
+                </div>
+              </form>
+            )}
+          </div>
+        </div>
+      </motion.section>
+
+      {/* Newsletter Section */}
+      <motion.section
+        className="mt-16"
+        initial={{ opacity: 0, y: 24 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, margin: "-60px" }}
+        transition={{ duration: 0.7, ease: "easeOut" }}
+      >
+        <div className="border-t border-border/30 pt-12">
+          <div className="max-w-lg mx-auto">
+            <h2
+              className="text-xl sm:text-2xl text-foreground uppercase mb-2 text-center"
+              style={{
+                fontFamily: "'Fraunces', serif",
+                fontWeight: 25,
+                letterSpacing: "0.3em",
+              }}
+            >
+              Newsletter
+            </h2>
+            <p className="text-muted-foreground text-sm text-center mb-8 leading-relaxed">
+              Bleiben Sie auf dem Laufenden – erhalten Sie Neuigkeiten zu neuen
+              Kunstwerken und NFTs.
+            </p>
+
+            {newsletterStatus === "subscribed" ? (
+              <motion.div
+                className="text-center py-8 text-accent"
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                data-ocid="newsletter.success_state"
+              >
+                <p className="text-base font-light tracking-wide">
+                  ✦ Herzlich willkommen! Sie erhalten ab jetzt unsere
+                  Neuigkeiten.
+                </p>
+                <button
+                  type="button"
+                  className="mt-4 text-xs text-muted-foreground underline underline-offset-4 hover:text-foreground transition-colors"
+                  onClick={() => {
+                    setNewsletterStatus("idle");
+                    setNewsletterEmail("");
+                  }}
+                >
+                  Weitere E-Mail anmelden
+                </button>
+              </motion.div>
+            ) : newsletterStatus === "already_subscribed" ? (
+              <motion.div
+                className="text-center py-8 text-muted-foreground"
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                data-ocid="newsletter.success_state"
+              >
+                <p className="text-base font-light tracking-wide">
+                  Diese E-Mail-Adresse ist bereits angemeldet.
+                </p>
+                <button
+                  type="button"
+                  className="mt-4 text-xs text-muted-foreground underline underline-offset-4 hover:text-foreground transition-colors"
+                  onClick={() => {
+                    setNewsletterStatus("idle");
+                    setNewsletterEmail("");
+                  }}
+                >
+                  Andere Adresse verwenden
+                </button>
+              </motion.div>
+            ) : (
+              <form
+                onSubmit={handleNewsletterSubmit}
+                className="flex flex-col sm:flex-row gap-3"
+              >
+                <Input
+                  type="email"
+                  required
+                  value={newsletterEmail}
+                  onChange={(e) => setNewsletterEmail(e.target.value)}
+                  placeholder="ihre@email.de"
+                  className="flex-1 bg-card/50 border-border/40 focus:border-accent/60"
+                  data-ocid="newsletter.input"
+                />
+                <Button
+                  type="submit"
+                  disabled={subscribeEmailMutation.isPending}
+                  className="shrink-0"
+                  data-ocid="newsletter.submit_button"
+                >
+                  {subscribeEmailMutation.isPending ? (
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  ) : null}
+                  Anmelden
+                </Button>
+              </form>
+            )}
+          </div>
+        </div>
+      </motion.section>
     </div>
   );
 }

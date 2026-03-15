@@ -24,8 +24,10 @@ import {
   ImageIcon,
   Layers,
   Loader2,
+  Mail,
   Plus,
   Sparkles,
+  Trash2,
   Upload,
 } from "lucide-react";
 import { motion } from "motion/react";
@@ -35,8 +37,10 @@ import { ExternalBlob } from "../../backend";
 import {
   useCollections,
   useCreateCollection,
+  useDeleteSubscriber,
   useMintNFT,
   useNFTs,
+  useSubscribers,
 } from "../../hooks/useQueries";
 import { AdminLayout } from "./AdminLayout";
 
@@ -101,8 +105,10 @@ const emptyMintForm: MintForm = {
 export function AdminDashboard() {
   const { data: nfts, isLoading: nftsLoading } = useNFTs();
   const { data: collections, isLoading: collectionsLoading } = useCollections();
+  const { data: subscribers, isLoading: subscribersLoading } = useSubscribers();
   const createCollectionMutation = useCreateCollection();
   const mintNFTMutation = useMintNFT();
+  const deleteSubscriberMutation = useDeleteSubscriber();
 
   // Dialog states
   const [collectionDialogOpen, setCollectionDialogOpen] = useState(false);
@@ -212,11 +218,20 @@ export function AdminDashboard() {
     }
   }
 
+  async function handleDeleteSubscriber(email: string) {
+    try {
+      await deleteSubscriberMutation.mutateAsync(email);
+      toast.success("Abonnent entfernt");
+    } catch {
+      toast.error("Fehler beim Entfernen");
+    }
+  }
+
   return (
     <AdminLayout title="Admin" description="Manage your NFT gallery">
       {/* Stats */}
       <motion.div
-        className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-10"
+        className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-10"
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4 }}
@@ -249,6 +264,22 @@ export function AdminDashboard() {
           ) : (
             <p className="heading-display text-5xl text-foreground text-glow-amber">
               {nfts?.length ?? 0}
+            </p>
+          )}
+        </div>
+
+        <div className="bg-card rounded p-6 shadow-card border border-border/40">
+          <div className="flex items-center justify-between mb-4">
+            <Mail className="w-5 h-5 text-accent" />
+            <span className="text-xs text-muted-foreground uppercase tracking-wider">
+              Abonnenten
+            </span>
+          </div>
+          {subscribersLoading ? (
+            <Skeleton className="h-10 w-16 bg-secondary" />
+          ) : (
+            <p className="heading-display text-5xl text-foreground text-glow-amber">
+              {subscribers?.length ?? 0}
             </p>
           )}
         </div>
@@ -346,6 +377,73 @@ export function AdminDashboard() {
           </Link>
         </Button>
       </motion.div>
+
+      {/* Subscribers List */}
+      <motion.section
+        className="mt-10"
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.4, duration: 0.4 }}
+      >
+        <div className="bg-card rounded border border-border/40 p-6">
+          <div className="flex items-center gap-2 mb-4">
+            <Mail className="w-4 h-4 text-accent" />
+            <h2 className="heading-serif text-base text-foreground">
+              Newsletter-Abonnenten
+            </h2>
+            {!subscribersLoading && (
+              <span className="ml-auto text-xs text-muted-foreground">
+                {subscribers?.length ?? 0} Einträge
+              </span>
+            )}
+          </div>
+
+          {subscribersLoading ? (
+            <div
+              className="space-y-2"
+              data-ocid="admin.subscribers.loading_state"
+            >
+              {[1, 2, 3].map((i) => (
+                <Skeleton key={i} className="h-9 w-full bg-secondary" />
+              ))}
+            </div>
+          ) : !subscribers || subscribers.length === 0 ? (
+            <div
+              className="py-10 text-center text-muted-foreground text-sm"
+              data-ocid="admin.subscribers.empty_state"
+            >
+              Noch keine Abonnenten.
+            </div>
+          ) : (
+            <ul
+              className="divide-y divide-border/30"
+              data-ocid="admin.subscribers.list"
+            >
+              {subscribers.map((email, i) => (
+                <li
+                  key={email}
+                  className="flex items-center justify-between py-2.5 gap-3"
+                  data-ocid={`admin.subscribers.item.${i + 1}`}
+                >
+                  <span className="text-sm text-foreground truncate">
+                    {email}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => handleDeleteSubscriber(email)}
+                    disabled={deleteSubscriberMutation.isPending}
+                    className="shrink-0 p-1.5 rounded text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors disabled:opacity-50"
+                    aria-label={`Abonnent ${email} entfernen`}
+                    data-ocid={`admin.subscribers.delete_button.${i + 1}`}
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      </motion.section>
 
       {/* ── Dialog: Kollektion erstellen ── */}
       <Dialog

@@ -298,3 +298,41 @@ export function useTransferNFT() {
     },
   });
 }
+
+// ─── Newsletter / Subscribers ──────────────────────────────────
+
+export function useSubscribeEmail() {
+  const { actor } = useActor();
+  return useMutation({
+    mutationFn: async (email: string) => {
+      if (!actor) throw new Error("No actor");
+      return (actor as any).subscribeEmail(email) as Promise<string>;
+    },
+  });
+}
+
+export function useSubscribers() {
+  const { actor, isFetching } = useActor();
+  return useQuery<string[]>({
+    queryKey: ["subscribers"],
+    queryFn: async () => {
+      if (!actor) return [];
+      return (actor as any).getSubscribers() as Promise<string[]>;
+    },
+    enabled: !!actor && !isFetching,
+  });
+}
+
+export function useDeleteSubscriber() {
+  const { actor } = useActor();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (email: string) => {
+      if (!actor) throw new Error("Not authenticated");
+      return (actor as any).deleteSubscriber(email);
+    },
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ["subscribers"] });
+    },
+  });
+}
