@@ -305,7 +305,8 @@ export function useSubscribeEmail() {
   const { actor } = useActor();
   return useMutation({
     mutationFn: async (email: string) => {
-      if (!actor) throw new Error("No actor");
+      if (!actor)
+        throw new Error("Verbindung wird aufgebaut, bitte kurz warten");
       return (actor as any).subscribeEmail(email) as Promise<string>;
     },
   });

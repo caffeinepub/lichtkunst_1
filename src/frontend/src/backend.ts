@@ -146,7 +146,12 @@ export interface backendInterface {
     getUserProfile(user: Principal): Promise<UserProfile | null>;
     isAdmin(): Promise<boolean>;
     isCallerAdmin(): Promise<boolean>;
+    deleteSubscriber(email: string): Promise<void>;
+    getNFTOwner(nftId: string): Promise<string | null>;
+    getSubscribers(): Promise<Array<string>>;
     mintNFT(id: string, title: string, description: string, imageId: ExternalBlob, collectionId: string, edition: string): Promise<void>;
+    subscribeEmail(email: string): Promise<string>;
+    transferNFT(nftId: string, toOwner: string): Promise<void>;
     saveCallerUserProfile(profile: UserProfile): Promise<void>;
     updateCollection(id: string, name: string, description: string, coverImageId: ExternalBlob | null): Promise<void>;
     updateNFT(id: string, title: string, description: string, imageId: ExternalBlob, edition: string): Promise<void>;
@@ -445,6 +450,76 @@ export class Backend implements backendInterface {
             }
         } else {
             const result = await this.actor.isCallerAdmin();
+            return result;
+        }
+    }
+    async deleteSubscriber(arg0: string): Promise<void> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.deleteSubscriber(arg0);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.deleteSubscriber(arg0);
+            return result;
+        }
+    }
+    async getNFTOwner(arg0: string): Promise<string | null> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getNFTOwner(arg0);
+                return result.length === 0 ? null : result[0];
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getNFTOwner(arg0);
+            return result.length === 0 ? null : result[0];
+        }
+    }
+    async getSubscribers(): Promise<Array<string>> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getSubscribers();
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getSubscribers();
+            return result;
+        }
+    }
+    async subscribeEmail(arg0: string): Promise<string> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.subscribeEmail(arg0);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.subscribeEmail(arg0);
+            return result;
+        }
+    }
+    async transferNFT(arg0: string, arg1: string): Promise<void> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.transferNFT(arg0, arg1);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.transferNFT(arg0, arg1);
             return result;
         }
     }

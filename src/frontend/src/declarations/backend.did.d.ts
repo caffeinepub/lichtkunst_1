@@ -66,13 +66,16 @@ export interface _SERVICE {
     undefined
   >,
   'deleteCollection' : ActorMethod<[string], undefined>,
+  'deleteSubscriber' : ActorMethod<[string], undefined>,
   'getAllCollections' : ActorMethod<[], Array<Collection>>,
   'getAllNFTs' : ActorMethod<[], Array<NFT>>,
   'getCallerUserProfile' : ActorMethod<[], [] | [UserProfile]>,
   'getCallerUserRole' : ActorMethod<[], UserRole>,
   'getCollectionById' : ActorMethod<[string], Collection>,
   'getNFTById' : ActorMethod<[string], NFT>,
+  'getNFTOwner' : ActorMethod<[string], [] | [string]>,
   'getNFTsByCollection' : ActorMethod<[string], Array<NFT>>,
+  'getSubscribers' : ActorMethod<[], Array<string>>,
   'getUserProfile' : ActorMethod<[Principal], [] | [UserProfile]>,
   'isAdmin' : ActorMethod<[], boolean>,
   'isCallerAdmin' : ActorMethod<[], boolean>,
@@ -81,6 +84,8 @@ export interface _SERVICE {
     undefined
   >,
   'saveCallerUserProfile' : ActorMethod<[UserProfile], undefined>,
+  'subscribeEmail' : ActorMethod<[string], string>,
+  'transferNFT' : ActorMethod<[string, string], undefined>,
   'updateCollection' : ActorMethod<
     [string, string, string, [] | [ExternalBlob]],
     undefined

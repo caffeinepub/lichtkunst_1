@@ -97,6 +97,7 @@ export function GalleryPage() {
   const [newsletterStatus, setNewsletterStatus] = useState<
     "idle" | "subscribed" | "already_subscribed"
   >("idle");
+  const [newsletterError, setNewsletterError] = useState<string | null>(null);
 
   const collectionMap = new Map<string, Collection>(
     (collections ?? []).map((c) => [c.id, c]),
@@ -120,6 +121,7 @@ export function GalleryPage() {
   async function handleNewsletterSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!newsletterEmail.trim()) return;
+    setNewsletterError(null);
     try {
       const result = await subscribeEmailMutation.mutateAsync(
         newsletterEmail.trim(),
@@ -127,10 +129,15 @@ export function GalleryPage() {
       setNewsletterStatus(
         result === "already_subscribed" ? "already_subscribed" : "subscribed",
       );
-    } catch {
-      // silently fail
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      setNewsletterError(
+        `Es ist ein Fehler aufgetreten. Bitte versuchen Sie es erneut.${msg ? ` (${msg})` : ""}`,
+      );
     }
   }
+
+  const newsletterButtonBusy = subscribeEmailMutation.isPending;
 
   return (
     <div className="container mx-auto px-4 sm:px-6 py-12">
@@ -392,6 +399,7 @@ export function GalleryPage() {
                   onClick={() => {
                     setNewsletterStatus("idle");
                     setNewsletterEmail("");
+                    setNewsletterError(null);
                   }}
                 >
                   Weitere E-Mail anmelden
@@ -413,37 +421,51 @@ export function GalleryPage() {
                   onClick={() => {
                     setNewsletterStatus("idle");
                     setNewsletterEmail("");
+                    setNewsletterError(null);
                   }}
                 >
                   Andere Adresse verwenden
                 </button>
               </motion.div>
             ) : (
-              <form
-                onSubmit={handleNewsletterSubmit}
-                className="flex flex-col sm:flex-row gap-3"
-              >
-                <Input
-                  type="email"
-                  required
-                  value={newsletterEmail}
-                  onChange={(e) => setNewsletterEmail(e.target.value)}
-                  placeholder="ihre@email.de"
-                  className="flex-1 bg-card/50 border-border/40 focus:border-accent/60"
-                  data-ocid="newsletter.input"
-                />
-                <Button
-                  type="submit"
-                  disabled={subscribeEmailMutation.isPending}
-                  className="shrink-0"
-                  data-ocid="newsletter.submit_button"
+              <>
+                <form
+                  onSubmit={handleNewsletterSubmit}
+                  className="flex flex-col sm:flex-row gap-3"
                 >
-                  {subscribeEmailMutation.isPending ? (
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  ) : null}
-                  Anmelden
-                </Button>
-              </form>
+                  <Input
+                    type="email"
+                    required
+                    value={newsletterEmail}
+                    onChange={(e) => {
+                      setNewsletterEmail(e.target.value);
+                      if (newsletterError) setNewsletterError(null);
+                    }}
+                    placeholder="ihre@email.de"
+                    className="flex-1 bg-card/50 border-border/40 focus:border-accent/60"
+                    data-ocid="newsletter.input"
+                  />
+                  <Button
+                    type="submit"
+                    disabled={newsletterButtonBusy}
+                    className="shrink-0"
+                    data-ocid="newsletter.submit_button"
+                  >
+                    {newsletterButtonBusy ? (
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    ) : null}
+                    Anmelden
+                  </Button>
+                </form>
+                {newsletterError && (
+                  <p
+                    className="text-sm text-destructive mt-2 text-center"
+                    data-ocid="newsletter.error_state"
+                  >
+                    {newsletterError}
+                  </p>
+                )}
+              </>
             )}
           </div>
         </div>
